@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CRM Pro — Firebase</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,700;1,9..144,400&display=swap" rel="stylesheet">
+
+<!-- Firebase SDK -->
+<!-- Firebase compat (tüm tarayıcılarda çalışır: Chrome, Safari, Firefox, iPhone, Android) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey:            "AIzaSyDbb8lWqbpivCgzer7grQBU3S_ZzLxrIt0",
+    authDomain:        "crm-rota.firebaseapp.com",
+    databaseURL:       "https://crm-rota-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId:         "crm-rota",
+    storageBucket:     "crm-rota.firebasestorage.app",
+    messagingSenderId: "21714764602",
+    appId:             "1:21714764602:web:7455f6ca1cbc6d3ab58603"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const _db = firebase.database();
+
+  window._firebase = {
+    configured: true,
+    ready: true,
+    db: _db,
+    ref:     (db, path) => db.ref(path),
+    set:     (r, val)   => r.set(val),
+    get:     (r)        => r.get(),
+    push:    (r, val)   => r.push(val),
+    remove:  (r)        => r.remove(),
+    onValue: (r, cb, err) => { r.on('value', cb, err); return () => r.off('value', cb); },
+    off:     (r)        => r.off()
+  };
+</script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#f7f6f2;--surface:#fff;--surface2:#f0efe9;--surface3:#e8e6de;
+  --border:#e2e0d8;--border2:#d4d2c8;
+  --text:#1c1b18;--text2:#4a4840;--muted:#8c8a82;
+  --accent:#1c1b18;
+  --gold:#b5860d;--gold-bg:#fdf6e3;
+  --green:#2a6b4a;--green-bg:#e8f5ee;
+  --red:#b83232;--red-bg:#fdf0f0;
+  --blue:#1e4d8c;--blue-bg:#edf3fc;
+  --cal:#1a73e8;--cal-bg:#e8f0fe;
+  --firebase:#f57c00;--firebase-bg:#fff3e0;
+  --r:14px;--r-sm:10px;
+  --shadow:0 1px 12px rgba(0,0,0,.07);
+  --shadow-md:0 4px 24px rgba(0,0,0,.11);
+  --shadow-lg:0 12px 48px rgba(0,0,0,.16);
+}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* ── SETUP SCREEN ── */
+#setupScreen{
+  display:none;position:fixed;inset:0;z-index:9999;
+  background:var(--bg);overflow-y:auto;padding:24px 20px 60px;
+}
+#setupScreen.open{display:block;}
+.setup-hero{
+  background:linear-gradient(135deg,#f57c00,#ff9800);
+  border-radius:20px;padding:28px;color:#fff;margin-bottom:24px;
+  text-align:center;
+}
+.setup-hero-icon{font-size:48px;margin-bottom:12px;}
+.setup-hero h1{font-family:'Fraunces',serif;font-size:26px;font-weight:700;margin-bottom:6px;}
+.setup-hero p{font-size:14px;opacity:.85;line-height:1.5;}
+.setup-step{
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:var(--r);margin-bottom:12px;overflow:hidden;
+}
+.setup-step-header{
+  padding:14px 18px;display:flex;align-items:center;gap:12px;cursor:pointer;
+}
+.step-num{
+  width:28px;height:28px;border-radius:50%;
+  background:var(--firebase);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:800;flex-shrink:0;
+}
+.step-title{font-size:14px;font-weight:700;}
+.step-body{padding:0 18px 18px;font-size:13px;line-height:1.7;color:var(--text2);}
+.step-body strong{color:var(--text);font-weight:700;}
+.step-body code{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:6px;padding:2px 7px;font-size:12px;
+  font-family:monospace;color:var(--firebase);
+}
+.step-body .url-box{
+  background:var(--surface2);border:1.5px solid var(--border);
+  border-radius:10px;padding:10px 14px;margin:8px 0;
+  font-size:12px;font-family:monospace;word-break:break-all;
+  color:var(--blue);cursor:pointer;
+}
+.step-body .url-box:hover{border-color:var(--blue);}
+.step-img{
+  width:100%;border-radius:10px;border:1.5px solid var(--border);
+  margin:8px 0;background:var(--surface2);
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;font-size:13px;color:var(--muted);text-align:center;
+  min-height:60px;
+}
+.config-input-area{
+  background:var(--surface2);border:1.5px solid var(--border);
+  border-radius:10px;padding:14px;margin:10px 0;
+  font-size:11px;font-family:monospace;color:var(--text2);
+  line-height:1.8;
+}
+.setup-input-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;}
+.setup-input-group{display:flex;flex-direction:column;gap:4px;}
+.setup-input-group label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);}
+.setup-input-group input{
+  background:var(--bg);border:1.5px solid var(--border);border-radius:8px;
+  padding:8px 10px;font-size:12px;font-family:monospace;
+  color:var(--text);outline:none;
+}
+.setup-input-group input:focus{border-color:var(--firebase);}
+.setup-save-btn{
+  background:var(--firebase);color:#fff;border:none;border-radius:12px;
+  padding:14px;width:100%;font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:15px;font-weight:800;cursor:pointer;margin-top:16px;
+  transition:all .15s;
+}
+.setup-save-btn:active{transform:scale(.97);}
+.setup-skip-btn{
+  background:var(--surface2);color:var(--muted);border:1.5px solid var(--border);
+  border-radius:12px;padding:12px;width:100%;font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:13px;font-weight:600;cursor:pointer;margin-top:8px;
+}
+
+/* ── STATUS BAR ── */
+.status-bar{
+  display:flex;align-items:center;gap:6px;
+  padding:6px 20px;
+  font-size:11px;font-weight:700;
+  border-bottom:1px solid var(--border);
+}
+.status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.status-dot.green{background:var(--green);}
+.status-dot.orange{background:var(--firebase);}
+.status-dot.gray{background:var(--muted);}
+.status-bar.connected{background:var(--green-bg);color:var(--green);}
+.status-bar.local{background:var(--firebase-bg);color:var(--firebase);}
+.status-bar.offline{background:var(--surface2);color:var(--muted);}
+.setup-link-btn{margin-left:auto;font-size:11px;font-weight:700;color:var(--firebase);background:none;border:none;cursor:pointer;text-decoration:underline;}
+
+/* ── TOPBAR ── */
+.topbar{position:sticky;top:0;z-index:60;background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;height:62px;display:flex;align-items:center;gap:12px;}
+.logo{font-family:'Fraunces',serif;font-size:22px;font-weight:700;letter-spacing:-.5px;white-space:nowrap;margin-right:4px;}
+.logo em{font-style:italic;color:var(--muted);font-weight:300;}
+.search-wrap{position:relative;flex:1;max-width:360px;}
+.search-wrap svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;}
+.topbar-search{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:9px 14px 9px 36px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;color:var(--text);outline:none;transition:border-color .15s;}
+.topbar-search:focus{border-color:var(--accent);}
+.topbar-search::placeholder{color:var(--muted);}
+.topbar-right{display:flex;align-items:center;gap:8px;margin-left:auto;}
+.ocr-btn{display:flex;align-items:center;gap:6px;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:9px 16px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .15s;box-shadow:0 2px 8px rgba(0,0,0,.18);}
+.ocr-btn:active{transform:scale(.97);}
+.add-company-btn{display:flex;align-items:center;justify-content:center;width:38px;height:38px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;cursor:pointer;color:var(--text2);transition:all .15s;}
+
+/* ── PAGES ── */
+.page{display:none;flex-direction:column;min-height:calc(100vh - 62px);}
+.page.active{display:flex;}
+.list-wrap{padding:20px;display:flex;flex-direction:column;gap:8px;}
+.list-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+.list-label{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+.list-count{font-size:12px;color:var(--muted);background:var(--surface3);padding:3px 9px;border-radius:20px;font-weight:600;}
+
+/* ── COMPANY CARD ── */
+.company-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:16px 18px;cursor:pointer;transition:all .15s;position:relative;overflow:hidden;}
+.company-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--border2);transition:background .15s;}
+.company-card:hover::before,.company-card.active::before{background:var(--accent);}
+.company-card:hover{border-color:var(--border2);box-shadow:var(--shadow);}
+.company-card.active{border-color:var(--accent);}
+.cc-top{display:flex;align-items:flex-start;gap:14px;}
+.company-logo{width:46px;height:46px;border-radius:12px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:700;font-size:18px;color:var(--text2);flex-shrink:0;overflow:hidden;border:1.5px solid var(--border);}
+.company-logo img{width:100%;height:100%;object-fit:cover;}
+.cc-info{flex:1;min-width:0;}
+.cc-name{font-family:'Fraunces',serif;font-size:16px;font-weight:700;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cc-sector{font-size:12px;color:var(--muted);}
+.cc-badges{display:flex;gap:6px;margin-top:3px;flex-wrap:wrap;}
+.badge{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:6px;}
+.badge-contacts{background:var(--blue-bg);color:var(--blue);}
+.badge-notes{background:var(--gold-bg);color:var(--gold);}
+.badge-cal{background:var(--cal-bg);color:var(--cal);}
+.cc-meta{margin-top:12px;padding-top:10px;border-top:1px solid var(--border);display:flex;gap:14px;flex-wrap:wrap;}
+.cc-meta-item{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:80px 20px;color:var(--muted);}
+.empty-icon{font-size:52px;margin-bottom:14px;opacity:.4;}
+.empty-title{font-family:'Fraunces',serif;font-size:20px;font-weight:600;color:var(--text2);margin-bottom:6px;}
+.empty-sub{font-size:14px;}
+
+/* ── DETAIL ── */
+.detail-topbar{display:flex;align-items:center;gap:12px;padding:0 20px;height:54px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:62px;z-index:50;}
+.back-btn{display:flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;font-size:14px;font-weight:600;color:var(--text2);padding:6px 10px;border-radius:8px;transition:background .15s;}
+.back-btn:hover{background:var(--surface2);}
+.detail-title{font-family:'Fraunces',serif;font-size:16px;font-weight:700;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.detail-actions{display:flex;gap:6px;margin-left:auto;}
+.icon-btn{width:36px;height:36px;border-radius:9px;border:1.5px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);transition:all .15s;}
+.icon-btn:hover{background:var(--surface2);}
+.icon-btn.danger:hover{background:var(--red-bg);border-color:#f5c0c0;color:var(--red);}
+.detail-body{padding:20px;display:flex;flex-direction:column;gap:16px;}
+
+/* ── SECTION CARD ── */
+.section-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;}
+.sc-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.sc-title{font-size:11px;font-weight:700;letter-spacing:1.3px;text-transform:uppercase;color:var(--muted);}
+.sc-action{display:flex;align-items:center;gap:5px;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;}
+.sc-action:active{transform:scale(.96);}
+.sc-body{padding:18px;}
+
+/* ── HERO ── */
+.company-hero{background:linear-gradient(135deg,#1c1b18 0%,#2e2d28 60%,#3d3b34 100%);border-radius:var(--r);padding:24px;color:#fff;position:relative;overflow:hidden;}
+.company-hero::after{content:'';position:absolute;right:-40px;top:-40px;width:200px;height:200px;background:rgba(255,255,255,.03);border-radius:50%;}
+.hero-logo{width:56px;height:56px;border-radius:14px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:700;font-size:22px;margin-bottom:14px;overflow:hidden;border:1.5px solid rgba(255,255,255,.15);}
+.hero-logo img{width:100%;height:100%;object-fit:cover;}
+.hero-name{font-family:'Fraunces',serif;font-size:26px;font-weight:700;line-height:1.1;margin-bottom:4px;}
+.hero-sector{font-size:14px;opacity:.6;}
+.hero-chips{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;}
+.hero-chip{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:5px 11px;font-size:12px;font-weight:500;}
+.hero-edit-btn{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:6px 12px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;}
+
+/* ── INFO GRID ── */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.info-cell{background:var(--surface2);border-radius:var(--r-sm);padding:12px 14px;}
+.ic-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+.ic-value{font-size:14px;font-weight:500;word-break:break-all;line-height:1.4;}
+.info-cell.full{grid-column:1/-1;}
+
+/* ── CONTACTS ── */
+.contact-row{display:flex;align-items:center;gap:12px;cursor:pointer;transition:background .1s;border-radius:8px;padding:10px;margin:0 -10px;}
+.contact-row:hover{background:var(--surface2);}
+.contact-avatar{width:42px;height:42px;border-radius:11px;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:700;font-size:15px;color:var(--text2);flex-shrink:0;overflow:hidden;border:1.5px solid var(--border);}
+.contact-avatar img{width:100%;height:100%;object-fit:cover;}
+.contact-info{flex:1;min-width:0;}
+.contact-name{font-size:14px;font-weight:700;margin-bottom:1px;}
+.contact-role{font-size:12px;color:var(--muted);}
+
+/* ── NOTE ── */
+.note-item{padding:14px;border-radius:var(--r-sm);background:var(--surface2);margin-bottom:10px;border-left:3px solid var(--border2);}
+.note-item:first-child{border-left-color:var(--accent);}
+.note-top-row{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:7px;}
+.note-time{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--muted);}
+.note-actions{display:flex;gap:5px;flex-shrink:0;}
+.note-del-btn{cursor:pointer;padding:3px 8px;border-radius:6px;background:var(--border);color:var(--muted);font-size:10px;font-weight:700;border:none;font-family:'Plus Jakarta Sans',sans-serif;}
+.note-del-btn:hover{background:var(--red-bg);color:var(--red);}
+.takip-btn{display:inline-flex;align-items:center;gap:5px;background:var(--cal-bg);color:var(--cal);border:1.5px solid #c5d9f7;border-radius:7px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;white-space:nowrap;}
+.takip-btn:hover{background:#d2e3fd;}
+.takip-btn.saved{background:var(--green-bg);color:var(--green);border-color:#b7e4cc;}
+.note-text{font-size:14px;line-height:1.6;color:var(--text);margin-top:4px;}
+.note-attaches{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.attach-img{width:64px;height:64px;border-radius:9px;object-fit:cover;border:1.5px solid var(--border);cursor:pointer;}
+.attach-pdf{width:64px;height:64px;border-radius:9px;background:var(--red-bg);border:1.5px solid #f5c0c0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-decoration:none;font-size:10px;font-weight:700;color:var(--red);gap:3px;}
+
+/* ── FAB ── */
+.fab{position:fixed;bottom:24px;right:20px;width:58px;height:58px;background:var(--accent);color:#fff;border:none;border-radius:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:var(--shadow-lg);transition:all .15s;z-index:59;}
+.fab:active{transform:scale(.93);}
+
+/* ── OVERLAY ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:200;display:none;align-items:flex-end;}
+.overlay.open{display:flex;animation:fadeIn .2s ease;}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.sheet{background:var(--surface);border-radius:24px 24px 0 0;width:100%;max-height:92vh;overflow-y:auto;animation:slideUp .28s cubic-bezier(.34,1.46,.64,1);padding-bottom:36px;}
+.sheet::-webkit-scrollbar{display:none;}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sheet-handle{width:38px;height:4px;background:var(--border2);border-radius:2px;margin:12px auto 2px;}
+.sheet-header{padding:12px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.sheet-title{font-family:'Fraunces',serif;font-size:19px;font-weight:700;}
+.close-btn{width:32px;height:32px;background:var(--surface2);border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text);}
+.sheet-body{padding:20px;}
+
+/* ── FORM ── */
+.form-group{margin-bottom:15px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+label{display:block;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+input[type=text],input[type=tel],input[type=email],input[type=datetime-local],textarea,select{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:11px 14px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;color:var(--text);outline:none;transition:border-color .15s;}
+input:focus,textarea:focus,select:focus{border-color:var(--accent);}
+textarea{resize:none;min-height:90px;line-height:1.55;}
+.btn{padding:13px 20px;border-radius:11px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;border:none;transition:all .15s;display:inline-flex;align-items:center;justify-content:center;gap:8px;}
+.btn:active{transform:scale(.97);}
+.btn-primary{background:var(--accent);color:#fff;width:100%;}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1.5px solid var(--border);}
+.btn-cal{background:var(--cal);color:#fff;width:100%;}
+
+/* ── REMINDER CHIPS ── */
+.reminder-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
+.rem-chip{padding:7px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--surface2);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;color:var(--text2);}
+.rem-chip.selected{background:var(--cal);color:#fff;border-color:var(--cal);}
+
+/* ── CONTACT PROFILE ── */
+.contact-detail-hero{margin:-20px -20px 0;background:var(--surface2);border-bottom:1px solid var(--border);}
+.bizcard-full{width:100%;max-height:220px;object-fit:contain;display:block;background:#fff;border-bottom:1px solid var(--border);}
+.contact-hero-info{padding:18px 20px;}
+.contact-hero-name{font-family:'Fraunces',serif;font-size:22px;font-weight:700;margin-bottom:3px;}
+.contact-hero-role{font-size:14px;color:var(--muted);margin-bottom:12px;}
+.contact-hero-chips{display:flex;gap:8px;flex-wrap:wrap;}
+.contact-hero-chip{display:inline-flex;align-items:center;gap:5px;background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:500;color:var(--text2);}
+
+/* ── OCR ── */
+.ocr-zone{border:2px dashed var(--border2);border-radius:var(--r);padding:30px 20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--surface2);position:relative;overflow:hidden;}
+.ocr-zone:hover{border-color:var(--accent);}
+.ocr-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;padding:0;background:none;border:none;}
+.ocr-preview{width:100%;border-radius:10px;margin:12px 0;max-height:180px;object-fit:contain;display:none;border:1.5px solid var(--border);}
+.ocr-result{background:var(--green-bg);border:1.5px solid #b7e4cc;border-radius:10px;padding:11px 14px;margin:6px 0;display:flex;align-items:center;gap:10px;}
+.ocr-result svg{color:var(--green);flex-shrink:0;}
+.ocr-result-key{font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.8px;}
+.ocr-result-val{font-size:14px;font-weight:600;}
+.spinner-wrap{display:none;flex-direction:column;align-items:center;gap:10px;padding:24px;}
+.spinner{width:34px;height:34px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── ATTACH ── */
+.attach-add-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+.attach-preview-img{width:64px;height:64px;border-radius:9px;object-fit:cover;border:1.5px solid var(--border);}
+.attach-add-btn{width:64px;height:64px;border-radius:9px;border:2px dashed var(--border2);background:var(--surface2);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);flex-shrink:0;position:relative;overflow:hidden;}
+.attach-add-btn input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;padding:0;background:none;border:none;}
+.attach-pdf-preview{width:64px;height:64px;border-radius:9px;background:var(--red-bg);border:1.5px solid #f5c0c0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--red);gap:2px;}
+
+/* ── LOADING ── */
+.loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,.88);z-index:9998;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;}
+.loading-overlay.open{display:flex;}
+.loading-overlay .spinner{width:44px;height:44px;border:4px solid var(--border);border-top-color:var(--cal);}
+.loading-overlay p{font-size:14px;font-weight:600;color:var(--text2);}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--accent);color:#fff;padding:10px 22px;border-radius:100px;font-size:13px;font-weight:700;opacity:0;transition:all .25s;z-index:999;white-space:nowrap;pointer-events:none;box-shadow:var(--shadow-md);}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.green{background:var(--green);}
+.toast.cal{background:var(--cal);}
+
+/* ── IMG VIEWER ── */
+.img-viewer{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px;}
+.img-viewer.open{display:flex;}
+.img-viewer img{max-width:100%;max-height:90vh;border-radius:12px;}
+.img-viewer-close{position:absolute;top:18px;right:18px;width:40px;height:40px;background:rgba(255,255,255,.18);border:none;border-radius:50%;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+
+@media(min-width:600px){body{max-width:680px;margin:0 auto;}.list-wrap,.detail-body{padding:24px;}}
+@media(min-width:900px){body{max-width:820px;}.info-grid{grid-template-columns:1fr 1fr 1fr;}}
+</style>
+</head>
+<body>
+
+<!-- ══════════ SETUP EKRANI ══════════ -->
+<div id="setupScreen">
+  <div class="setup-hero">
+    <div class="setup-hero-icon">🔥</div>
+    <h1>Firebase Kurulumu</h1>
+    <p>3-4 cihazdan aynı veriye erişmek için<br>Google Firebase'i 5 adımda bağlayın</p>
+  </div>
+
+  <div class="setup-step">
+    <div class="setup-step-header">
+      <div class="step-num">1</div>
+      <div class="step-title">Firebase projesi oluşturun</div>
+    </div>
+    <div class="step-body">
+      Aşağıdaki bağlantıya tıklayın (Google hesabınızla giriş yapın):
+      <div class="url-box" onclick="window.open('https://console.firebase.google.com','_blank')">
+        🔗 console.firebase.google.com
+      </div>
+      <strong>"Create a project"</strong> → Proje adı: <code>crm-pro</code> → Google Analytics: <strong>kapatın</strong> → <strong>"Create project"</strong>
+    </div>
+  </div>
+
+  <div class="setup-step">
+    <div class="setup-step-header">
+      <div class="step-num">2</div>
+      <div class="step-title">Realtime Database ekleyin</div>
+    </div>
+    <div class="step-body">
+      Sol menüden <strong>"Build" → "Realtime Database"</strong> → <strong>"Create Database"</strong><br><br>
+      Lokasyon: <code>europe-west1</code> (Belçika — en yakın)<br>
+      Security rules: <strong>"Start in test mode"</strong> seçin → <strong>"Enable"</strong>
+      <div style="background:var(--firebase-bg);border:1.5px solid #ffcc80;border-radius:10px;padding:10px 12px;margin-top:10px;font-size:12px;color:#e65100;">
+        ⚠️ Test mode 30 gün açık kalır. Sonra kuralları güncellemeniz gerekir — hatırlatıcı için not alın.
+      </div>
+    </div>
+  </div>
+
+  <div class="setup-step">
+    <div class="setup-step-header">
+      <div class="step-num">3</div>
+      <div class="step-title">Web uygulaması ekleyin</div>
+    </div>
+    <div class="step-body">
+      Proje ana sayfasında <strong>"&lt;/&gt;"</strong> (Web) ikonuna tıklayın<br>
+      App nickname: <code>crm-web</code> → <strong>"Register app"</strong><br><br>
+      Açılan sayfada <code>firebaseConfig</code> içindeki değerleri kopyalayın — sonraki adımda gireceksiniz.
+    </div>
+  </div>
+
+  <div class="setup-step">
+    <div class="setup-step-header">
+      <div class="step-num">4</div>
+      <div class="step-title">Bilgileri aşağıya girin</div>
+    </div>
+    <div class="step-body">
+      Firebase konsolundan kopyaladığınız değerleri girin:
+      <div class="setup-input-row">
+        <div class="setup-input-group" style="grid-column:1/-1"><label>apiKey</label><input type="text" id="cfgApiKey" placeholder="AIzaSy..."></div>
+        <div class="setup-input-group" style="grid-column:1/-1"><label>databaseURL</label><input type="text" id="cfgDbUrl" placeholder="https://crm-pro-default-rtdb.europe-west1.firebasedatabase.app"></div>
+        <div class="setup-input-group"><label>projectId</label><input type="text" id="cfgProjectId" placeholder="crm-pro"></div>
+        <div class="setup-input-group"><label>appId</label><input type="text" id="cfgAppId" placeholder="1:123..."></div>
+        <div class="setup-input-group" style="grid-column:1/-1"><label>authDomain</label><input type="text" id="cfgAuthDomain" placeholder="crm-pro.firebaseapp.com"></div>
+        <div class="setup-input-group" style="grid-column:1/-1"><label>storageBucket</label><input type="text" id="cfgStorageBucket" placeholder="crm-pro.firebasestorage.app"></div>
+        <div class="setup-input-group" style="grid-column:1/-1"><label>messagingSenderId</label><input type="text" id="cfgMsgSenderId" placeholder="123456789012"></div>
+      </div>
+      <button class="setup-save-btn" onclick="saveFirebaseConfig()">🔥 Firebase'i Bağla ve Başlat</button>
+    </div>
+  </div>
+
+  <div class="setup-step">
+    <div class="setup-step-header">
+      <div class="step-num">5</div>
+      <div class="step-title">Diğer cihazlara kurulum</div>
+    </div>
+    <div class="step-body">
+      Bu HTML dosyasını <strong>Google Drive</strong>'a yükleyin.<br>
+      Diğer bilgisayarlardan açıp aynı Firebase bilgilerini girin.<br>
+      Hepsi aynı veritabanına bağlanır — <strong>anlık senkronizasyon</strong> çalışır.
+      <div style="background:var(--green-bg);border:1.5px solid #b7e4cc;border-radius:10px;padding:10px 12px;margin-top:10px;font-size:12px;color:var(--green);">
+        ✓ Ücretsiz plan: 1 GB depolama · 10 GB/ay transfer · 100 eşzamanlı bağlantı<br>
+        ✓ 3-4 kullanıcı için fazlasıyla yeterli — aylık maliyet: 0₺
+      </div>
+    </div>
+  </div>
+
+  <button class="setup-skip-btn" onclick="skipSetup()">Şimdilik atla — sadece bu cihazda kullan</button>
+</div>
+
+<!-- ══════════ ANA UYGULAMA ══════════ -->
+<div id="appWrapper" style="display:none;">
+
+<!-- Bağlantı durumu -->
+<div class="status-bar" id="statusBar">
+  <div class="status-dot gray" id="statusDot"></div>
+  <span id="statusText">Bağlantı kontrol ediliyor…</span>
+  <button class="setup-link-btn" onclick="showSetup()">⚙ Ayarlar</button>
+</div>
+
+<header class="topbar">
+  <div class="logo">CRM <em>Pro</em></div>
+  <div class="search-wrap">
+    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input class="topbar-search" type="text" id="searchInput" placeholder="Firma, kişi, telefon ara…" oninput="renderFirmList()">
+  </div>
+  <div class="topbar-right">
+    <button class="ocr-btn" onclick="openOCR()">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      Kartvizit Tara
+    </button>
+    <button class="add-company-btn" onclick="openAddFirm()">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+</header>
+
+<div class="page active" id="pageFirmList">
+  <div class="list-wrap">
+    <div class="list-header">
+      <span class="list-label">Firmalar</span>
+      <span class="list-count" id="firmCount">0</span>
+    </div>
+    <div id="firmList"></div>
+  </div>
+</div>
+
+<div class="page" id="pageFirmDetail">
+  <div class="detail-topbar">
+    <button class="back-btn" onclick="goBack()">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+      Firmalar
+    </button>
+    <span class="detail-title" id="detailFirmName"></span>
+    <div class="detail-actions">
+      <button class="icon-btn" onclick="openEditFirm()"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+      <button class="icon-btn danger" onclick="deleteFirm()"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>
+    </div>
+  </div>
+  <div class="detail-body" id="firmDetailBody"></div>
+</div>
+
+<button class="fab" id="fabBtn" onclick="openAddFirm()">
+  <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+</button>
+
+</div><!-- /appWrapper -->
+
+<!-- TOAST & VIEWER -->
+<div class="toast" id="toast"></div>
+<div class="img-viewer" id="imgViewer" onclick="closeImgViewer()">
+  <img id="imgViewerSrc" src="" alt="">
+  <button class="img-viewer-close" onclick="closeImgViewer()">✕</button>
+</div>
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <p id="loadingText">Kaydediliyor…</p>
+</div>
+
+<!-- ═══ OVERLAYS ═══ -->
+<!-- Firma -->
+<div class="overlay" id="overlayFirm" onclick="oc(event,'overlayFirm')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header"><span class="sheet-title" id="overlayFirmTitle">Yeni Firma</span><button class="close-btn" onclick="cm('overlayFirm')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="sheet-body">
+      <input type="hidden" id="firmEditId">
+      <div class="form-group"><label>Firma Adı *</label><input type="text" id="fFirmName" placeholder="ABC Şirketi A.Ş."></div>
+      <div class="form-row">
+        <div class="form-group"><label>Sektör</label><input type="text" id="fFirmSector" placeholder="İnşaat…"></div>
+        <div class="form-group"><label>Web</label><input type="text" id="fFirmWeb" placeholder="www.firma.com"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Telefon</label><input type="tel" id="fFirmPhone"></div>
+        <div class="form-group"><label>E-posta</label><input type="email" id="fFirmEmail"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Vergi No</label><input type="text" id="fFirmTax"></div>
+        <div class="form-group"><label>Vergi Dairesi</label><input type="text" id="fFirmTaxOffice"></div>
+      </div>
+      <div class="form-group"><label>Adres</label><input type="text" id="fFirmAddress"></div>
+      <div class="form-group"><label>Genel Not</label><textarea id="fFirmNote"></textarea></div>
+      <button class="btn btn-primary" onclick="saveFirm()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- Kişi -->
+<div class="overlay" id="overlayContact" onclick="oc(event,'overlayContact')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header"><span class="sheet-title" id="overlayContactTitle">Yeni Kişi</span><button class="close-btn" onclick="cm('overlayContact')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="sheet-body">
+      <input type="hidden" id="contactEditId">
+      <div class="form-row">
+        <div class="form-group"><label>Ad Soyad *</label><input type="text" id="fContactName"></div>
+        <div class="form-group"><label>Unvan</label><input type="text" id="fContactTitle"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Telefon</label><input type="tel" id="fContactPhone"></div>
+        <div class="form-group"><label>E-posta</label><input type="email" id="fContactEmail"></div>
+      </div>
+      <div class="form-group"><label>Not</label><textarea id="fContactNote"></textarea></div>
+      <button class="btn btn-primary" onclick="saveContact()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- Not -->
+<div class="overlay" id="overlayNote" onclick="oc(event,'overlayNote')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header"><span class="sheet-title">Görüşme Notu</span><button class="close-btn" onclick="cm('overlayNote')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="sheet-body">
+      <div class="form-group"><label>Not *</label><textarea id="noteTextInput" placeholder="Görüşme detayları, kararlar, sonraki adımlar…"></textarea></div>
+      <div class="form-group">
+        <label>Ekler (Fotoğraf / PDF)</label>
+        <div class="attach-add-row" id="noteAttachRow">
+          <label class="attach-add-btn"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><input type="file" accept="image/*,.pdf" multiple onchange="handleNoteAttach(event)"></label>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="saveNote()">Notu Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- Takip Al -->
+<div class="overlay" id="overlayTakip" onclick="oc(event,'overlayTakip')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header"><span class="sheet-title">📅 Takibe Al</span><button class="close-btn" onclick="cm('overlayTakip')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="sheet-body">
+      <div style="background:var(--cal-bg);border:1.5px solid #c5d9f7;border-radius:10px;padding:12px 14px;margin-bottom:16px;">
+        <div style="font-size:11px;font-weight:700;color:var(--cal);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">📋 İlgili Not</div>
+        <div style="font-size:13px;line-height:1.5;color:var(--text2);" id="takipNotePreview"></div>
+      </div>
+      <div class="form-group"><label>Etkinlik Başlığı</label><input type="text" id="takipTitle"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Tarih ve Saat</label><input type="datetime-local" id="takipDatetime"></div>
+        <div class="form-group"><label>Süre</label>
+          <select id="takipDuration">
+            <option value="30">30 dakika</option>
+            <option value="60" selected>1 saat</option>
+            <option value="90">1.5 saat</option>
+            <option value="120">2 saat</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Hatırlatıcı</label>
+        <div class="reminder-chips" id="reminderChips">
+          <div class="rem-chip" data-min="10" onclick="toggleReminder(this)">10 dk önce</div>
+          <div class="rem-chip selected" data-min="60" onclick="toggleReminder(this)">1 saat önce</div>
+          <div class="rem-chip" data-min="1440" onclick="toggleReminder(this)">1 gün önce</div>
+          <div class="rem-chip" data-min="2880" onclick="toggleReminder(this)">2 gün önce</div>
+        </div>
+      </div>
+      <div class="form-group"><label>Ek Açıklama</label><textarea id="takipDesc" style="min-height:70px;" placeholder="Görüşmede ele alınacak konular…"></textarea></div>
+      <button class="btn btn-cal" onclick="saveTakip()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        Google Calendar'a Ekle
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Kişi Profili -->
+<div class="overlay" id="overlayContactProfile" onclick="oc(event,'overlayContactProfile')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header"><span class="sheet-title" id="cpSheetTitle">Kişi Profili</span><button class="close-btn" onclick="cm('overlayContactProfile')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="sheet-body" id="cpSheetBody"></div>
+  </div>
+</div>
+
+<!-- OCR -->
+<div class="overlay" id="overlayOCR" onclick="oc(event,'overlayOCR')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header"><span class="sheet-title">📇 Kartvizit Tara</span><button class="close-btn" onclick="cm('overlayOCR')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="sheet-body">
+      <div class="ocr-zone"><input type="file" accept="image/*" capture="environment" id="ocrInput" onchange="handleOCRFile(event)"><div style="font-size:38px;margin-bottom:8px;">📷</div><div style="font-size:15px;font-weight:600;margin-bottom:4px;">Fotoğraf çek veya seç</div><div style="font-size:12px;color:var(--muted);">JPG, PNG desteklenir</div></div>
+      <img class="ocr-preview" id="ocrPreview" alt="">
+      <div class="spinner-wrap" id="ocrSpinner"><div class="spinner"></div><div style="font-size:13px;color:var(--muted);font-weight:500;">Analiz ediliyor…</div></div>
+      <div id="ocrResultsList"></div>
+      <div id="ocrForm" style="display:none;margin-top:16px;">
+        <div class="form-row"><div class="form-group"><label>Ad Soyad</label><input type="text" id="ocrName"></div><div class="form-group"><label>Unvan</label><input type="text" id="ocrJobTitle"></div></div>
+        <div class="form-group"><label>Şirket</label><input type="text" id="ocrCompany"></div>
+        <div class="form-row"><div class="form-group"><label>Telefon</label><input type="tel" id="ocrPhone"></div><div class="form-group"><label>E-posta</label><input type="email" id="ocrEmail"></div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <button class="btn btn-secondary" onclick="ocrAddToExisting()">Mevcut Firmaya</button>
+          <button class="btn btn-primary" onclick="ocrCreateNew()">Yeni Firma + Kişi</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Firma Seç -->
+<div class="overlay" id="overlayPickFirm" onclick="oc(event,'overlayPickFirm')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header"><span class="sheet-title">Firma Seç</span><button class="close-btn" onclick="cm('overlayPickFirm')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="sheet-body" id="pickFirmBody"></div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+//  STATE & STORAGE
+// ══════════════════════════════════════════════
+let firms = [];
+let activeFirmId = null;
+let activeContactId = null;
+let pendingNoteAttachments = [];
+let _ocrBizcardImg = null;
+let _takipNoteId = null;
+let _useFirebase = false;
+let _fbListener = null;
+
+const LS_KEY = 'crm4_firms';
+const LS_CFG = 'crm4_fbconfig';
+
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function initials(n){ return (n||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase(); }
+function fmtDate(iso){ const d=new Date(iso); return d.toLocaleDateString('tr-TR',{day:'2-digit',month:'long',year:'numeric'})+' '+d.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}); }
+function fmtShort(iso){ const d=new Date(iso); return d.toLocaleDateString('tr-TR',{day:'2-digit',month:'short'})+' '+d.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}); }
+function v(id){ return document.getElementById(id).value.trim(); }
+function getFirm(id){ return firms.find(f=>f.id===id); }
+function getContact(firmId,cId){ const f=getFirm(firmId); return f?(f.contacts||[]).find(c=>c.id===cId):null; }
+
+// ── Kaydet ──
+async function saveData(){
+  if(_useFirebase && window._firebase && window._firebase.ready){
+    try{
+      const obj = firms.reduce((acc,f)=>{acc[f.id]=f;return acc;},{});
+      await window._firebase.db.ref('firms').set(obj);
+    }catch(err){ console.error('Firebase write error:',err); }
+  } else {
+    localStorage.setItem(LS_KEY, JSON.stringify(firms));
+  }
+}
+
+// ── Firebase Bağla ──
+function connectFirebase(){
+  if(!window._firebase || !window._firebase.ready) return;
+  const db = window._firebase.db;
+  const firmsRef = db.ref('firms');
+  firmsRef.on('value', snap => {
+    const data = snap.val();
+    firms = data ? Object.values(data).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)) : [];
+    renderFirmList();
+    if(activeFirmId) renderFirmDetail(activeFirmId);
+    setStatus('connected','🟢 Firebase bağlı — tüm cihazlar senkronize');
+  }, err => {
+    setStatus('local','🔴 Firebase hatası — yerel modda çalışıyor');
+  });
+}
+
+function setStatus(type, text){
+  const bar=document.getElementById('statusBar');
+  const dot=document.getElementById('statusDot');
+  const span=document.getElementById('statusText');
+  bar.className='status-bar '+type;
+  dot.className='status-dot '+(type==='connected'?'green':type==='local'?'orange':'gray');
+  span.textContent=text;
+}
+
+// ══════════════════════════════════════════════
+//  SETUP
+// ══════════════════════════════════════════════
+function showSetup(){ document.getElementById('setupScreen').classList.add('open'); }
+function hideSetup(){ document.getElementById('setupScreen').classList.remove('open'); }
+function skipSetup(){
+  hideSetup();
+  document.getElementById('appWrapper').style.display='block';
+  _useFirebase=false;
+  firms=JSON.parse(localStorage.getItem(LS_KEY)||'[]');
+  setStatus('local','🟡 Yerel mod — sadece bu cihazda');
+  renderFirmList();
+}
+
+function saveFirebaseConfig(){
+  const cfg={
+    apiKey:v('cfgApiKey'), authDomain:v('cfgAuthDomain'),
+    databaseURL:v('cfgDbUrl'), projectId:v('cfgProjectId'),
+    storageBucket:v('cfgStorageBucket'), messagingSenderId:v('cfgMsgSenderId'),
+    appId:v('cfgAppId')
+  };
+  if(!cfg.apiKey||!cfg.databaseURL||!cfg.projectId){
+    alert('En az apiKey, databaseURL ve projectId girilmeli.'); return;
+  }
+  localStorage.setItem(LS_CFG, JSON.stringify(cfg));
+  alert('Firebase bilgileri kaydedildi!\n\nSayfayı yenileyin — Firebase otomatik bağlanacak.\n\n(Diğer cihazlarda da bu sayfayı açıp aynı bilgileri girin)');
+}
+
+// ══════════════════════════════════════════════
+//  GÖRSEL SIKIŞTIRMA (ücretsiz, base64)
+// ══════════════════════════════════════════════
+function compressImage(file, maxWidth, maxHeight, quality) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let w = img.width, h = img.height;
+        // Oranı koru, max boyuta küçült
+        if (w > maxWidth || h > maxHeight) {
+          const ratio = Math.min(maxWidth / w, maxHeight / h);
+          w = Math.round(w * ratio);
+          h = Math.round(h * ratio);
+        }
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function readFileAsBase64(file) {
+  if (file.type === 'application/pdf') {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = e => resolve(e.target.result);
+      reader.readAsDataURL(file);
+    });
+  }
+  // Görsel → sıkıştır
+  return compressImage(file, 1200, 1200, 0.75);
+}
+
+async function compressProfilePhoto(file) {
+  // Profil fotoğrafı daha küçük olsun
+  return compressImage(file, 400, 400, 0.80);
+}
+
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+function init(){
+  // Compat SDK her zaman hazır
+  _useFirebase = true;
+  document.getElementById('appWrapper').style.display='block';
+  setStatus('offline','⏳ Firebase\'e bağlanıyor…');
+  connectFirebase();
+}
+
+// Sayfa yüklenince direkt başlat — compat SDK anında hazır
+document.addEventListener('DOMContentLoaded', init);
+
+// ══════════════════════════════════════════════
+//  NAV
+// ══════════════════════════════════════════════
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const fab=document.getElementById('fabBtn');
+  if(id==='pageFirmList'){fab.style.display='flex';fab.onclick=()=>openAddFirm();}
+  else if(id==='pageFirmDetail'){fab.style.display='flex';fab.onclick=()=>openAddContact();}
+  else{fab.style.display='none';}
+  window.scrollTo(0,0);
+}
+function goBack(){showPage('pageFirmList');activeFirmId=null;renderFirmList();}
+
+// ══════════════════════════════════════════════
+//  RENDER FIRM LIST
+// ══════════════════════════════════════════════
+function renderFirmList(){
+  const q=document.getElementById('searchInput').value.toLowerCase().trim();
+  const el=document.getElementById('firmList');
+  document.getElementById('firmCount').textContent=firms.length;
+  let list=firms.filter(f=>!q||(f.name||'').toLowerCase().includes(q)||(f.sector||'').toLowerCase().includes(q)||(f.phone||'').toLowerCase().includes(q)||(f.contacts||[]).some(c=>(c.name||'').toLowerCase().includes(q)||(c.phone||'').toLowerCase().includes(q)));
+  if(!firms.length){el.innerHTML=`<div class="empty"><div class="empty-icon">🏢</div><div class="empty-title">Henüz firma yok</div><div class="empty-sub">+ ile firma ekleyin veya kartvizit tarayın</div></div>`;return;}
+  if(!list.length){el.innerHTML=`<div class="empty"><div class="empty-icon">🔍</div><div class="empty-title">Sonuç bulunamadı</div><div class="empty-sub">"${q}" için eşleşme yok</div></div>`;return;}
+  el.innerHTML=list.map(f=>{
+    const contacts=f.contacts||[],notes=f.notes||[];
+    const calCount=notes.filter(n=>n.calEventId).length;
+    return `<div class="company-card${f.id===activeFirmId?' active':''}" onclick="openFirm('${f.id}')">
+      <div class="cc-top"><div class="company-logo">${f.logoUrl?`<img src="${f.logoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">`:`${initials(f.name)}`}</div><div class="cc-info"><div class="cc-name">${f.name}</div><div class="cc-sector">${f.sector||'Sektör belirtilmedi'}</div><div class="cc-badges"><span class="badge badge-contacts">👤 ${contacts.length} kişi</span>${notes.length?`<span class="badge badge-notes">📋 ${notes.length} not</span>`:''}${calCount?`<span class="badge badge-cal">📅 ${calCount} takip</span>`:''}</div></div></div>
+      ${(f.phone||f.email)?`<div class="cc-meta">${f.phone?`<span class="cc-meta-item">📞 ${f.phone}</span>`:''}${f.email?`<span class="cc-meta-item">✉️ ${f.email}</span>`:''}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+//  FIRM DETAIL
+// ══════════════════════════════════════════════
+function openFirm(id){activeFirmId=id;const f=getFirm(id);document.getElementById('detailFirmName').textContent=f.name;renderFirmDetail(id);showPage('pageFirmDetail');}
+
+function renderFirmDetail(id){
+  const f=getFirm(id);if(!f) return;
+  const contacts=f.contacts||[];
+  const notes=(f.notes||[]).slice().sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+  const infoFields=[{l:'Telefon',v:f.phone},{l:'E-posta',v:f.email},{l:'Web',v:f.website},{l:'Vergi No',v:f.tax},{l:'Vergi Dairesi',v:f.taxOffice},{l:'Adres',v:f.address,full:true}].filter(x=>x.v);
+
+  document.getElementById('firmDetailBody').innerHTML=`
+    <div class="company-hero">
+      <button class="hero-edit-btn" onclick="openEditFirm()">Düzenle</button>
+      <div class="hero-logo" style="position:relative;cursor:pointer;" onclick="document.getElementById('firmLogoInput').click()">
+        ${f.logoUrl ? `<img src="${f.logoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">` : initials(f.name)}
+        <div style="position:absolute;bottom:-6px;right:-6px;width:22px;height:22px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #fff;">
+          <svg width="11" height="11" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        </div>
+      </div>
+      <input type="file" id="firmLogoInput" accept="image/*" style="display:none;" onchange="handleFirmLogoUpload(event)">
+      <div class="hero-name">${f.name}</div>
+      ${f.sector?`<div class="hero-sector">${f.sector}</div>`:''}
+      <div class="hero-chips">${f.phone?`<div class="hero-chip">📞 ${f.phone}</div>`:''}${f.email?`<div class="hero-chip">✉️ ${f.email}</div>`:''}${f.website?`<div class="hero-chip">🌐 ${f.website}</div>`:''}</div>
+    </div>
+    ${infoFields.length?`<div class="section-card"><div class="sc-header"><span class="sc-title">Firma Bilgileri</span></div><div class="sc-body"><div class="info-grid">${infoFields.map(x=>`<div class="info-cell${x.full?' full':''}"><div class="ic-label">${x.l}</div><div class="ic-value">${x.v}</div></div>`).join('')}</div></div></div>`:''}
+    ${f.generalNote?`<div class="section-card"><div class="sc-header"><span class="sc-title">📌 Genel Not</span></div><div class="sc-body"><div style="font-size:14px;line-height:1.6;">${f.generalNote}</div></div></div>`:''}
+    <div class="section-card">
+      <div class="sc-header"><span class="sc-title">👤 İlgili Kişiler (${contacts.length})</span><button class="sc-action" onclick="openAddContact()">+ Kişi Ekle</button></div>
+      <div class="sc-body">${contacts.length?contacts.map(c=>`<div class="contact-row" onclick="openContactProfile('${c.id}')"><div class="contact-avatar">${c.bizcardImg?`<img src="${c.bizcardImg}">`:(c.name?initials(c.name):'?')}</div><div class="contact-info"><div class="contact-name">${c.name||'—'}</div><div class="contact-role">${c.title||'Unvan belirtilmedi'}</div></div><div style="text-align:right;font-size:12px;font-weight:500;color:var(--text2);">${c.phone||''}</div><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" style="color:var(--muted);"><path d="m9 18 6-6-6-6"/></svg></div>`).join(''):`<div style="text-align:center;padding:24px 0;color:var(--muted);font-size:13px;">👤 Henüz kişi eklenmedi</div>`}</div>
+    </div>
+    <div class="section-card">
+      <div class="sc-header"><span class="sc-title">📋 Görüşme Geçmişi (${notes.length})</span><button class="sc-action" onclick="openAddNote()">+ Not Ekle</button></div>
+      <div class="sc-body">${notes.length?notes.map(n=>`
+        <div class="note-item">
+          <div class="note-top-row">
+            <div class="note-time"><svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${fmtDate(n.createdAt)}</div>
+            <div class="note-actions">
+              <button class="takip-btn${n.calEventId?' saved':''}" onclick="openTakip('${n.id}')"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>${n.calEventId?'Takipte ✓':'Takibe Al'}</button>
+              <button class="note-del-btn" onclick="deleteNote('${n.id}')">Sil</button>
+            </div>
+          </div>
+          ${n.calEventId?`<div style="font-size:11px;color:var(--cal);font-weight:600;margin-bottom:4px;">📅 ${n.calEventTitle||''} — ${n.calEventTime?fmtShort(n.calEventTime):''}</div>`:''}
+          <div class="note-text">${n.text}</div>
+          ${n.attachments&&n.attachments.length?`<div class="note-attaches">${n.attachments.map(a=>a.type==='pdf'?`<a href="${a.dataUrl}" download="${a.name||'belge.pdf'}" class="attach-pdf"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>PDF</a>`:`<img class="attach-img" src="${a.dataUrl}" onclick="openImg('${a.dataUrl}')" alt="">`).join('')}</div>`:''}
+        </div>`).join(''):`<div style="text-align:center;padding:24px 0;color:var(--muted);font-size:13px;">📋 Henüz görüşme notu yok</div>`}
+      </div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════
+//  CONTACT PROFILE
+// ══════════════════════════════════════════════
+function openContactProfile(contactId){
+  const c=getContact(activeFirmId,contactId);if(!c) return;
+  activeContactId=contactId;
+  document.getElementById('cpSheetTitle').textContent=c.name||'Kişi Profili';
+  const photoSrc = c.photoUrl || c.bizcardImg || '';
+  document.getElementById('cpSheetBody').innerHTML=`
+    <div class="contact-detail-hero">
+      <div style="position:relative;background:var(--surface3);min-height:140px;display:flex;align-items:center;justify-content:center;">
+        ${photoSrc
+          ? `<img class="bizcard-full" src="${photoSrc}" onclick="openImg('${photoSrc}')" alt="Profil" style="max-height:220px;width:100%;object-fit:contain;cursor:pointer;display:block;">`
+          : `<div style="font-size:64px;padding:24px;">${initials(c.name)}</div>`}
+        <label style="position:absolute;bottom:10px;right:10px;background:var(--accent);color:#fff;border-radius:10px;padding:7px 13px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;box-shadow:var(--shadow-md);">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          ${photoSrc ? 'Değiştir' : 'Fotoğraf Ekle'}
+          <input type="file" accept="image/*" style="display:none;" onchange="handleContactPhotoUpload(event,'${c.id}')">
+        </label>
+      </div>
+      <div class="contact-hero-info">
+        <div class="contact-hero-name">${c.name||'—'}</div>
+        <div class="contact-hero-role">${c.title||''}</div>
+        <div class="contact-hero-chips">
+          ${c.phone?`<div class="contact-hero-chip">📞 ${c.phone}</div>`:''}
+          ${c.email?`<div class="contact-hero-chip">✉️ ${c.email}</div>`:''}
+        </div>
+      </div>
+    </div>
+    ${c.note?`<div style="margin-top:16px;background:var(--gold-bg);border-radius:10px;padding:13px;border-left:3px solid var(--gold);"><div style="font-size:10px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;">📌 Not</div><div style="font-size:14px;line-height:1.55;">${c.note}</div></div>`:''}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;">
+      <button class="btn btn-secondary" onclick="openEditContact()">✏️ Düzenle</button>
+      <button class="btn" style="background:var(--red-bg);color:var(--red);" onclick="deleteContact()">🗑 Sil</button>
+    </div>`;
+  openModal('overlayContactProfile');
+}
+
+// ══════════════════════════════════════════════
+//  TAKİP AL
+// ══════════════════════════════════════════════
+function openTakip(noteId){
+  const f=getFirm(activeFirmId);if(!f) return;
+  const note=(f.notes||[]).find(n=>n.id===noteId);if(!note) return;
+  _takipNoteId=noteId;
+  const now=new Date(Date.now()+86400000);now.setMinutes(0,0,0);
+  document.getElementById('takipDatetime').value=now.toISOString().slice(0,16);
+  document.getElementById('takipTitle').value=`Takip — ${f.name}`;
+  document.getElementById('takipDesc').value='';
+  document.getElementById('takipNotePreview').textContent=note.text.slice(0,120)+(note.text.length>120?'…':'');
+  document.querySelectorAll('.rem-chip').forEach(c=>c.classList.remove('selected'));
+  document.querySelector('.rem-chip[data-min="60"]').classList.add('selected');
+  openModal('overlayTakip');
+}
+function toggleReminder(el){el.classList.toggle('selected');}
+
+async function saveTakip(){
+  const f=getFirm(activeFirmId);if(!f) return;
+  const note=(f.notes||[]).find(n=>n.id===_takipNoteId);if(!note) return;
+  const title=v('takipTitle')||`Takip — ${f.name}`;
+  const dtVal=document.getElementById('takipDatetime').value;
+  if(!dtVal){toast('Tarih seçmelisiniz');return;}
+  const startDt=new Date(dtVal);
+  const endDt=new Date(startDt.getTime()+parseInt(document.getElementById('takipDuration').value)*60000);
+  const extraDesc=v('takipDesc');
+  const description=[`🏢 Firma: ${f.name}`,f.phone?`📞 ${f.phone}`:'','','📋 İlgili Görüşme Notu:',note.text,extraDesc?`\n📝 Ek Notlar:\n${extraDesc}`:'','','— CRM Pro ile oluşturuldu'].filter(Boolean).join('\n');
+  const reminders=Array.from(document.querySelectorAll('.rem-chip.selected')).map(c=>({method:'popup',minutes:parseInt(c.dataset.min)}));
+  if(!reminders.length) reminders.push({method:'popup',minutes:60});
+
+  document.getElementById('loadingText').textContent='Google Calendar\'a ekleniyor…';
+  document.getElementById('loadingOverlay').classList.add('open');
+  cm('overlayTakip');
+
+  try{
+    // Claude.ai MCP entegrasyonu
+    const result = await callCalendarMCP({ summary:title, description, start:{dateTime:startDt.toISOString(),timeZone:'Europe/Istanbul'}, end:{dateTime:endDt.toISOString(),timeZone:'Europe/Istanbul'}, reminders:{useDefault:false,overrides:reminders} });
+    note.calEventId=result.eventId||'saved';
+    note.calEventTitle=title;
+    note.calEventTime=startDt.toISOString();
+    await saveData();
+    document.getElementById('loadingOverlay').classList.remove('open');
+    renderFirmDetail(activeFirmId);
+    toast('📅 Takvime eklendi! Hatırlatıcı kuruldu ✓','cal');
+  }catch(err){
+    document.getElementById('loadingOverlay').classList.remove('open');
+    toast('Hata: '+err.message);
+  }
+}
+
+function callCalendarMCP(eventData){
+  return new Promise((resolve,reject)=>{
+    const msgId=uid();
+    window._calPending=window._calPending||{};
+    window._calPending[msgId]={resolve,reject};
+    try{ window.parent.postMessage({type:'mcp_call',tool:'gcal_create_event',params:{event:eventData,sendUpdates:'none'},msgId},'*'); }
+    catch(e){ reject(new Error('Takvim bağlantısı yalnızca claude.ai üzerinde çalışır.')); }
+    setTimeout(()=>{ if(window._calPending[msgId]){delete window._calPending[msgId];reject(new Error('Zaman aşımı'));}},15000);
+  });
+}
+window.addEventListener('message',e=>{ if(e.data&&e.data.type==='mcp_result'&&window._calPending?.[e.data.msgId]){const{resolve,reject}=window._calPending[e.data.msgId];delete window._calPending[e.data.msgId];if(e.data.error) reject(new Error(e.data.error));else resolve(e.data.result||{});}});
+
+// ══════════════════════════════════════════════
+//  FIRM CRUD
+// ══════════════════════════════════════════════
+function openAddFirm(){document.getElementById('overlayFirmTitle').textContent='Yeni Firma';document.getElementById('firmEditId').value='';['fFirmName','fFirmSector','fFirmWeb','fFirmPhone','fFirmEmail','fFirmTax','fFirmTaxOffice','fFirmAddress','fFirmNote'].forEach(id=>document.getElementById(id).value='');openModal('overlayFirm');}
+function openEditFirm(){const f=getFirm(activeFirmId);if(!f) return;document.getElementById('overlayFirmTitle').textContent='Firmayı Düzenle';document.getElementById('firmEditId').value=f.id;document.getElementById('fFirmName').value=f.name||'';document.getElementById('fFirmSector').value=f.sector||'';document.getElementById('fFirmWeb').value=f.website||'';document.getElementById('fFirmPhone').value=f.phone||'';document.getElementById('fFirmEmail').value=f.email||'';document.getElementById('fFirmTax').value=f.tax||'';document.getElementById('fFirmTaxOffice').value=f.taxOffice||'';document.getElementById('fFirmAddress').value=f.address||'';document.getElementById('fFirmNote').value=f.generalNote||'';openModal('overlayFirm');}
+async function saveFirm(){
+  const name=v('fFirmName');if(!name){toast('Firma adı zorunludur');return;}
+  const eid=v('firmEditId');
+  const data={name,sector:v('fFirmSector'),website:v('fFirmWeb'),phone:v('fFirmPhone'),email:v('fFirmEmail'),tax:v('fFirmTax'),taxOffice:v('fFirmTaxOffice'),address:v('fFirmAddress'),generalNote:v('fFirmNote')};
+  if(eid){const i=firms.findIndex(f=>f.id===eid);if(i>=0) firms[i]={...firms[i],...data};activeFirmId=eid;}
+  else{const nf={id:uid(),...data,contacts:[],notes:[],createdAt:new Date().toISOString()};firms.unshift(nf);activeFirmId=nf.id;}
+  await saveData();cm('overlayFirm');renderFirmList();
+  if(eid){renderFirmDetail(eid);document.getElementById('detailFirmName').textContent=data.name;}
+  toast(eid?'Firma güncellendi ✓':'Firma eklendi ✓');
+}
+async function deleteFirm(){if(!confirm('Bu firmayı silmek istiyor musunuz?')) return;firms=firms.filter(f=>f.id!==activeFirmId);await saveData();renderFirmList();goBack();toast('Firma silindi');}
+
+// ══════════════════════════════════════════════
+//  CONTACT CRUD
+// ══════════════════════════════════════════════
+function openAddContact(){document.getElementById('overlayContactTitle').textContent='Yeni Kişi';document.getElementById('contactEditId').value='';['fContactName','fContactTitle','fContactPhone','fContactEmail','fContactNote'].forEach(id=>document.getElementById(id).value='');openModal('overlayContact');}
+function openEditContact(){const c=getContact(activeFirmId,activeContactId);if(!c) return;document.getElementById('overlayContactTitle').textContent='Kişiyi Düzenle';document.getElementById('contactEditId').value=c.id;document.getElementById('fContactName').value=c.name||'';document.getElementById('fContactTitle').value=c.title||'';document.getElementById('fContactPhone').value=c.phone||'';document.getElementById('fContactEmail').value=c.email||'';document.getElementById('fContactNote').value=c.note||'';cm('overlayContactProfile');openModal('overlayContact');}
+async function saveContact(){
+  const name=v('fContactName');if(!name){toast('Ad Soyad zorunludur');return;}
+  const f=getFirm(activeFirmId);if(!f) return;
+  if(!f.contacts) f.contacts=[];
+  const eid=v('contactEditId');
+  const data={name,title:v('fContactTitle'),phone:v('fContactPhone'),email:v('fContactEmail'),note:v('fContactNote')};
+  if(eid){const i=f.contacts.findIndex(c=>c.id===eid);if(i>=0) f.contacts[i]={...f.contacts[i],...data};}
+  else f.contacts.push({id:uid(),...data,bizcardImg:null,createdAt:new Date().toISOString()});
+  await saveData();cm('overlayContact');renderFirmDetail(activeFirmId);toast(eid?'Kişi güncellendi ✓':'Kişi eklendi ✓');
+}
+async function deleteContact(){if(!confirm('Bu kişiyi silmek istiyor musunuz?')) return;const f=getFirm(activeFirmId);if(!f) return;f.contacts=(f.contacts||[]).filter(c=>c.id!==activeContactId);await saveData();cm('overlayContactProfile');renderFirmDetail(activeFirmId);toast('Kişi silindi');}
+
+// ══════════════════════════════════════════════
+//  NOTES
+// ══════════════════════════════════════════════
+async function handleFirmLogoUpload(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const f = getFirm(activeFirmId); if (!f) return;
+  document.getElementById('loadingText').textContent = 'Logo kaydediliyor…';
+  document.getElementById('loadingOverlay').classList.add('open');
+  try {
+    f.logoUrl = await compressProfilePhoto(file);
+    await saveData();
+    document.getElementById('loadingOverlay').classList.remove('open');
+    renderFirmDetail(activeFirmId);
+    renderFirmList();
+    toast('Logo kaydedildi ✓', 'green');
+  } catch(err) {
+    document.getElementById('loadingOverlay').classList.remove('open');
+    toast('Hata: ' + err.message);
+  }
+}
+
+async function handleContactPhotoUpload(e, contactId) {
+  const file = e.target.files[0]; if (!file) return;
+  const f = getFirm(activeFirmId); if (!f) return;
+  const c = (f.contacts||[]).find(x => x.id === contactId); if (!c) return;
+  document.getElementById('loadingText').textContent = 'Fotoğraf kaydediliyor…';
+  document.getElementById('loadingOverlay').classList.add('open');
+  try {
+    c.photoUrl = await compressProfilePhoto(file);
+    await saveData();
+    document.getElementById('loadingOverlay').classList.remove('open');
+    openContactProfile(contactId);
+    renderFirmDetail(activeFirmId);
+    toast('Fotoğraf kaydedildi ✓', 'green');
+  } catch(err) {
+    document.getElementById('loadingOverlay').classList.remove('open');
+    toast('Hata: ' + err.message);
+  }
+}
+function openAddNote(){document.getElementById('noteTextInput').value='';pendingNoteAttachments=[];refreshNoteAttachRow();openModal('overlayNote');}
+
+function handleNoteAttach(e){
+  Array.from(e.target.files).forEach(file=>{
+    // Önizleme için hemen göster
+    const reader = new FileReader();
+    reader.onload = ev => {
+      pendingNoteAttachments.push({
+        type: file.type==='application/pdf' ? 'pdf' : 'image',
+        dataUrl: ev.target.result,
+        file: file,
+        name: file.name
+      });
+      refreshNoteAttachRow();
+    };
+    reader.readAsDataURL(file);
+  });
+  e.target.value='';
+}
+
+function refreshNoteAttachRow(){
+  const row=document.getElementById('noteAttachRow');
+  row.innerHTML=pendingNoteAttachments.map((a,i)=>
+    a.type==='pdf'
+      ? `<div class="attach-pdf-preview" title="${a.name}"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>PDF</div>`
+      : `<img class="attach-preview-img" src="${a.dataUrl}" title="${a.name}">`
+  ).join('')
+  +`<label class="attach-add-btn"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><input type="file" accept="image/*,.pdf" multiple onchange="handleNoteAttach(event)"></label>`;
+}
+
+async function saveNote(){
+  const text=v('noteTextInput');if(!text){toast('Not boş olamaz');return;}
+  const f=getFirm(activeFirmId);if(!f) return;
+  if(!f.notes) f.notes=[];
+
+  document.getElementById('loadingText').textContent='Not kaydediliyor…';
+  document.getElementById('loadingOverlay').classList.add('open');
+  cm('overlayNote');
+
+  try {
+    // Görselleri sıkıştır, PDF'leri olduğu gibi bırak
+    const attachments = await Promise.all(pendingNoteAttachments.map(async a => {
+      if (a.type === 'pdf') {
+        return { type:'pdf', dataUrl: a.dataUrl, name: a.name };
+      } else {
+        const compressed = await compressImage(a.file||null, 1200, 1200, 0.75).catch(()=>a.dataUrl);
+        return { type:'image', dataUrl: compressed, name: a.name };
+      }
+    }));
+
+    f.notes.push({id:uid(),text,attachments,createdAt:new Date().toISOString()});
+    await saveData();
+    document.getElementById('loadingOverlay').classList.remove('open');
+    renderFirmDetail(activeFirmId);
+    toast('Not kaydedildi ✓');
+  } catch(err) {
+    document.getElementById('loadingOverlay').classList.remove('open');
+    toast('Hata: '+err.message);
+  }
+}
+async function deleteNote(noteId){if(!confirm('Bu notu silmek istediğinizden emin misiniz?')) return;const f=getFirm(activeFirmId);if(!f) return;f.notes=(f.notes||[]).filter(n=>n.id!==noteId);await saveData();renderFirmDetail(activeFirmId);toast('Not silindi');}
+
+// ══════════════════════════════════════════════
+//  OCR
+// ══════════════════════════════════════════════
+function openOCR(){document.getElementById('ocrPreview').style.display='none';document.getElementById('ocrResultsList').innerHTML='';document.getElementById('ocrForm').style.display='none';document.getElementById('ocrSpinner').style.display='none';document.getElementById('ocrInput').value='';_ocrBizcardImg=null;openModal('overlayOCR');}
+async function handleOCRFile(e){const file=e.target.files[0];if(!file) return;const reader=new FileReader();reader.onload=async ev=>{_ocrBizcardImg=ev.target.result;const prev=document.getElementById('ocrPreview');prev.src=ev.target.result;prev.style.display='block';await runOCR(ev.target.result,file);};reader.readAsDataURL(file);}
+async function runOCR(b64url,file){document.getElementById('ocrSpinner').style.display='flex';document.getElementById('ocrResultsList').innerHTML='';document.getElementById('ocrForm').style.display='none';try{const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:file.type||'image/jpeg',data:b64url.split(',')[1]}},{type:'text',text:'Bu kartvizit görselindeki bilgileri çıkar. Sadece JSON döndür:\n{"name":"","title":"","company":"","phone":"","email":"","website":""}\nBulamadıklarını boş string bırak.'}]}]})});const data=await res.json();document.getElementById('ocrSpinner').style.display='none';const txt=(data.content||[]).map(b=>b.text||'').join('');let parsed={};try{const m=txt.match(/\{[\s\S]*\}/);if(m) parsed=JSON.parse(m[0]);}catch(err){}const fields=[{k:'name',l:'Ad Soyad',i:'👤'},{k:'company',l:'Şirket',i:'🏢'},{k:'phone',l:'Telefon',i:'📞'},{k:'email',l:'E-posta',i:'✉️'},{k:'title',l:'Unvan',i:'🎖️'}].filter(f=>parsed[f.k]);document.getElementById('ocrResultsList').innerHTML=fields.length?`<div style="font-size:11px;font-weight:700;color:var(--green);margin:10px 0 8px;text-transform:uppercase;letter-spacing:.8px;">✓ Tespit Edilenler</div>`+fields.map(f=>`<div class="ocr-result"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><div><div class="ocr-result-key">${f.i} ${f.l}</div><div class="ocr-result-val">${parsed[f.k]}</div></div></div>`).join(''):`<div style="background:var(--red-bg);border-radius:10px;padding:12px;color:var(--red);font-size:13px;margin:10px 0;">Bilgi çıkarılamadı.</div>`;document.getElementById('ocrName').value=parsed.name||'';document.getElementById('ocrJobTitle').value=parsed.title||'';document.getElementById('ocrCompany').value=parsed.company||'';document.getElementById('ocrPhone').value=parsed.phone||'';document.getElementById('ocrEmail').value=parsed.email||'';document.getElementById('ocrForm').style.display='block';}catch(err){document.getElementById('ocrSpinner').style.display='none';document.getElementById('ocrResultsList').innerHTML=`<div style="background:var(--red-bg);border-radius:10px;padding:12px;color:var(--red);font-size:13px;">Hata: ${err.message}</div>`;}}
+async function ocrCreateNew(){const cname=v('ocrCompany')||'Yeni Firma';const nf={id:uid(),name:cname,sector:'',phone:'',email:'',website:'',tax:'',taxOffice:'',address:'',generalNote:'',contacts:[],notes:[],createdAt:new Date().toISOString()};const nc={id:uid(),name:v('ocrName'),title:v('ocrJobTitle'),phone:v('ocrPhone'),email:v('ocrEmail'),bizcardImg:_ocrBizcardImg,note:'',createdAt:new Date().toISOString()};if(nc.name) nf.contacts.push(nc);firms.unshift(nf);await saveData();renderFirmList();cm('overlayOCR');activeFirmId=nf.id;document.getElementById('detailFirmName').textContent=nf.name;renderFirmDetail(nf.id);showPage('pageFirmDetail');toast('Firma ve kişi oluşturuldu ✓');}
+function ocrAddToExisting(){if(!firms.length){toast('Önce bir firma ekleyin');return;}document.getElementById('pickFirmBody').innerHTML=`<div style="font-size:13px;color:var(--muted);margin-bottom:12px;">Hangi firmaya eklemek istiyorsunuz?</div>`+firms.map(f=>`<div onclick="ocrAttachToFirm('${f.id}')" style="padding:12px 14px;border-radius:10px;border:1.5px solid var(--border);margin-bottom:8px;cursor:pointer;font-weight:600;font-size:14px;">${f.name}<span style="font-size:12px;color:var(--muted);font-weight:400;margin-left:6px;">${(f.contacts||[]).length} kişi</span></div>`).join('');openModal('overlayPickFirm');}
+async function ocrAttachToFirm(firmId){const f=getFirm(firmId);if(!f) return;if(!f.contacts) f.contacts=[];f.contacts.push({id:uid(),name:v('ocrName'),title:v('ocrJobTitle'),phone:v('ocrPhone'),email:v('ocrEmail'),bizcardImg:_ocrBizcardImg,note:'',createdAt:new Date().toISOString()});await saveData();cm('overlayPickFirm');cm('overlayOCR');activeFirmId=firmId;document.getElementById('detailFirmName').textContent=f.name;renderFirmDetail(firmId);showPage('pageFirmDetail');renderFirmList();toast('Kişi firmaya eklendi ✓');}
+
+// ══════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════
+function openModal(id){document.getElementById(id).classList.add('open');}
+function cm(id){document.getElementById(id).classList.remove('open');}
+function oc(e,id){if(e.target===document.getElementById(id)) cm(id);}
+function openImg(src){document.getElementById('imgViewerSrc').src=src;document.getElementById('imgViewer').classList.add('open');}
+function closeImgViewer(){document.getElementById('imgViewer').classList.remove('open');}
+function toast(msg,type=''){const t=document.getElementById('toast');t.textContent=msg;t.className='toast'+(type?' '+type:'');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
+</script>
+</body>
+</html>
